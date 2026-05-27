@@ -14,7 +14,7 @@
 
 > A full-featured freelance marketplace backend engineered at **Senior Backend Engineer** level — clean architecture, real-time communication, Redis caching, role-based access control, and comprehensive test coverage.
 
-🌐 **Production URL:** [`https://your-production-url.com`](https://your-production-url.com)
+🌐 **Production URL:** [`https://hirehub-freelance-platform-1.onrender.com`](https://hirehub-freelance-platform-1.onrender.com)
 
 </div>
 
