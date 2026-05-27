@@ -34,7 +34,9 @@ async function bootstrap() {
   const tokenService = app.get(TokenService);
   app.useWebSocketAdapter(new AuthSocketAdapter(app, tokenService));
 
-  await app.listen(process.env.PORT || 5000);
-  console.log(`Server running on  http://localhost:${process.env.PORT}`);
+  const port = process.env.PORT || 9090
+
+  await app.listen(port, '0.0.0.0');
+  console.log(`Server running on  http://localhost:${port}`);
 }
 bootstrap();
