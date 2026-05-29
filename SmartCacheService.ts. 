@@ -1,0 +1,81 @@
+> /**
+>  * SmartCacheService: Cache Stampede Protection
+>  */
+> @Injectable()
+> export class SmartCacheService {
+>   constructor(private readonly redis: Redis) {}
+> 
+>   async getOrSet<T>(key: string, factory: () => Promise<T>, ttl: number = 3600): Promise<T> {
+>     const cached = await this.redis.get(key);
+>     if (cached) return JSON.parse(cached);
+> 
+>     const lockKey = `lock:${key}`;
+>     const locked = await this.redis.set(lockKey, '1', 'NX', 'EX', 10);
+>     
+>     if (!locked) {
+>       await new Promise(res => setTimeout(res, 100));
+>       return this.getOrSet(key, factory, ttl);
+>     }
+> 
+>     try {
+>       const data = await factory();
+>       await this.redis.setex(key, ttl + Math.floor(Math.random() * 300), JSON.stringify(data));
+>       return data;
+>     } finally {
+>       await this.redis.del(lockKey);
+>     }
+>   }
+> }
+> ```
+
+---
+
+### 3. الملف الثالث: `ChatGateway.ts`
+مخصص لتعزيز أمن قنوات التواصل اللحظية[span_2](start_span)[span_2](end_span).
+> **النص للحفظ:**
+> ```typescript
+> /**
+>  * ChatGateway: Secure Real-time Layer
+>  */
+> @WebSocketGateway({ cors: true })
+> @UseGuards(ThrottlerGuard)
+> export class ChatGateway {
+>   @SubscribeMessage('send-message')
+>   @Throttle({ default: { limit: 10, ttl: 60000 } })
+>   async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() payload: any) {
+>     if (!payload.message) throw new WsException('Invalid message');
+>     
+>     const sanitized = sanitizeHtml(payload.message, { allowedTags: [], allowedAttributes: {} });
+>     return { event: 'new-message', data: sanitized };
+>   }
+> }
+> ```
+
+---
+
+### 4. الملف الرابع: `load-test.js`
+مخصص لسكربت اختبار الأداء[span_3](start_span)[span_3](end_span).
+> **النص للحفظ:**
+> 
+```javascript
+> /**
+>  * Load Test Script (k6)
+>  */
+> import http from 'k6/http';
+> import { check, sleep } from 'k6';
+> 
+> export const options = {
+>   stages: [
+>     { duration: '30s', target: 20 },
+>     { duration: '1m', target: 20 },
+>     { duration: '30s', target: 0 },
+>   ],
+> };
+> 
+> export default function () {
+>   const res = http.post('https://hirehub-freelance-platform.onrender.com/api/payment/escrow', JSON.stringify({ /* payload */ }), { headers: { 'Content-Type': 'application/json' } });
+>   check(res, { 'status is 200': (r) => r.status === 200 });
+>   sleep(1);
+> }
+> ```
+```</T></T></T>

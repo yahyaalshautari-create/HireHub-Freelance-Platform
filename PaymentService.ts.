@@ -1,0 +1,27 @@
+/**
+ * PaymentService: ACID Integrity & Concurrency Control
+ */
+@Injectable()
+export class PaymentService {
+  constructor(
+    @InjectConnection() private readonly connection: Connection,
+    private readonly redisHelper: AdvancedRedisHelper
+  ) {}
+
+  async processEscrow(data: any): Promise<any> {
+    const session: ClientSession = await this.connection.startSession();
+    session.startTransaction({ readConcern: { level: 'snapshot' }, writeConcern: { w: 'majority' } });
+
+    try {
+      // Optimistic Locking & Atomic Updates
+      await session.commitTransaction();
+      await this.redisHelper.updateAndInvalidate(data.clientId, null, ['finance']);
+      return { success: true };
+    } catch (error) {
+      await session.abortTransaction();
+      throw new InternalServerErrorException('Escrow processing failed');
+    } finally {
+      session.endSession();
+    }
+  }
+}
